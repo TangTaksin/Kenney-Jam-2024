@@ -34,6 +34,9 @@ public class ChartPlayer : MonoBehaviour
 
     public TextMeshProUGUI TickCounterTxt;
 
+    public delegate void TimingEvent();
+    public static TimingEvent OnEarly, OnLate, OnGood, OnMiss;
+
     public void Start()
     {
         Runner = Line.handleRect.GetComponent<Image>();
@@ -234,13 +237,17 @@ public class ChartPlayer : MonoBehaviour
         switch (time)
         {
             case Timing.miss:
+                OnMiss?.Invoke();
                 break;
 
             case Timing.early:
+                OnEarly?.Invoke();
                 break;
             case Timing.great:
+                OnGood?.Invoke();
                 break;
             case Timing.late:
+                OnLate?.Invoke();
                 break;
         }
     }
