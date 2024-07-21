@@ -16,7 +16,7 @@ public class Conductor : MonoBehaviour
     public delegate void ConductorEvent(AudioClip _clip, float _bpm);
     public static ConductorEvent OnPlay, OnPause, OnStop;
 
-    public bool isPlaying;
+    public static bool isPlaying;
 
     private void Start()
     {
@@ -31,7 +31,9 @@ public class Conductor : MonoBehaviour
 
     public void StartPlaying(AudioClip _clip, float _bpm)
     {
-        audioSource.PlayOneShot(_clip);
+        audioSource.clip = _clip;
+        audioSource.Play();
+
         bpm = _bpm;
         crotchet = 60 / bpm;
         UpdateDspTime();

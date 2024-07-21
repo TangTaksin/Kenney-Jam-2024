@@ -17,5 +17,6 @@ public class Phrases
     public string name;
     public int endAfterBeat = 15;
     public bool playerTurn;
+    public bool clearNode;
     public Note[] Notes;
 }

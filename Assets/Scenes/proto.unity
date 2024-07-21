@@ -531,7 +531,7 @@ GameObject:
   - component: {fileID: 740875587}
   - component: {fileID: 740875586}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: Gameplay_Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -938,9 +938,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentChart: {fileID: 11400000, guid: 21721c5a21d4a164caeb71e4147a5d6f, type: 2}
-  guideSkin: {fileID: 0}
+  guideSkin: {fileID: 11400000, guid: ede28ba06553d824cbb19c76c78b36f0, type: 2}
   playerSkin: {fileID: 11400000, guid: a00d71f3348c39e4ebda222e7ecfa04c, type: 2}
   lastbeat: 0
+  inputWindow_valid: 0.5
+  inputWindow_good: 0.25
   _promptRect: {fileID: 642123767}
   Line: {fileID: 1765906156}
   TickCounterTxt: {fileID: 695509948}
@@ -957,7 +959,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3cea5b7c63e570f4f969b2b7b4f2d4e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isPlaying: 0
 --- !u!82 &824051614
 AudioSource:
   m_ObjectHideFlags: 0

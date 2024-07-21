@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class ChartPlayer : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class ChartPlayer : MonoBehaviour
     bool isPlayerTurn;
 
     public NoteSkin guideSkin, playerSkin;
+    NoteSkin currentSkin;
 
     public float lastbeat;
     public static float beatCount = 0;
@@ -17,10 +19,16 @@ public class ChartPlayer : MonoBehaviour
 
     int phrase_num;
     int beat_array_num = 0;
+    Note cur_note;
+
+    [Header("Input Window")]
+    public float inputWindow_valid = .5f;
+    public float inputWindow_good = .25f;
+    [Space]
 
     public Transform _promptRect;
     public Slider Line;
-    Transform Runner;
+    Image Runner;
 
     List<GameObject> promtsImg_list = new List<GameObject>();
 
@@ -28,13 +36,19 @@ public class ChartPlayer : MonoBehaviour
 
     public void Start()
     {
-        Runner = Line.handleRect;
+        Runner = Line.handleRect.GetComponent<Image>();
     }
 
     private void Update()
     {
+        if (!Conductor.isPlaying)
+            return;
+
         BeatUpdate();
         LineUpdate();
+       
+
+        DetectPlayerInput();
     }
 
     void BeatUpdate()
@@ -50,7 +64,7 @@ public class ChartPlayer : MonoBehaviour
             }
         }
 
-        if (beatCount > 15)
+        if (beatCount > currentChart.phrases[phrase_num].endAfterBeat)
         {
             NextPhrase();
         }
@@ -61,10 +75,11 @@ public class ChartPlayer : MonoBehaviour
     public float lineProg = 0;
 
     void LineUpdate()
-    {
+    { 
+        ReadChart(lineProg);
         lineProg += (Conductor.bpm / 60) * Time.deltaTime;
         Line.value = (lineProg / 16);
-        ReadChart(lineProg);
+        
     }
 
     public void StartPlaying()
@@ -79,47 +94,154 @@ public class ChartPlayer : MonoBehaviour
 
         isPlayerTurn = currentChart.phrases[(int)phrase_num].playerTurn;
 
-        if (!isPlayerTurn)
-            PlaceBeat(beat_num);
-    }
-    
-    void PlaceBeat(float beat_num)
-    {
-        if (currentChart.phrases[phrase_num].Notes.Length == 0)
-            return;
+        switch(isPlayerTurn)
+        {
+            case false:
+                currentSkin = guideSkin;
+                Runner.color = guideSkin.color;
+                break;
+            case true:
+                currentSkin = playerSkin;
+                Runner.color = playerSkin.color;
+                break;
+        }
 
-        var cur_note = currentChart.phrases[phrase_num].Notes[beat_array_num];
+        CheckNote(beat_num);
+    }
+
+    void CheckNote(float beat_num)
+    {
+        if (currentChart.phrases[phrase_num].Notes.Length == 0
+            || beat_array_num > currentChart.phrases[phrase_num].Notes.Length - 1)
+        {
+            return;
+        }
+        else
+            cur_note = currentChart.phrases[phrase_num].Notes[beat_array_num];
 
         if (beat_num >= cur_note.onBeat)
         {
-            GameObject inst_note = null;
-
-            if (promtsImg_list.Count < beat_array_num + 1)
+            if (!isPlayerTurn)
             {
-                inst_note = new GameObject();
-                var note_image = inst_note.AddComponent<Image>();
-
-                note_image.sprite = playerSkin.GetDirectionSprite(cur_note.input);
-                note_image.color = playerSkin.color;
-
-                inst_note.transform.SetParent(_promptRect);
-                inst_note.transform.position = Runner.position;
-
-                promtsImg_list.Add(inst_note);
+                PlaceNote(cur_note.input);
             }
-            else
+            else if (Mathf.Abs(lineProg - cur_note.onBeat) < inputWindow_valid)
             {
-                inst_note = promtsImg_list[beat_array_num].gameObject;
-                var note_image = GetComponent<Image>();
-
-                note_image.sprite = playerSkin.GetDirectionSprite(cur_note.input);
-                note_image.color = playerSkin.color;
-
-                inst_note.gameObject.SetActive(true);
+                TimingDisplay(Timing.miss);
             }
 
-            //
             beat_array_num++;
+        }
+    }
+
+    void PlaceNote(input _input)
+    {
+        GameObject inst_note = null;
+
+        if (promtsImg_list.Count < beat_array_num + 1)
+        {
+            inst_note = new GameObject();
+            var note_image = inst_note.AddComponent<Image>();
+            print(note_image);
+
+            note_image.sprite = currentSkin.GetDirectionSprite(_input);
+            note_image.color = currentSkin.color;
+
+            inst_note.transform.SetParent(_promptRect);
+            inst_note.transform.position = Runner.rectTransform.position;
+
+            promtsImg_list.Add(inst_note);
+        }
+        else
+        {
+            inst_note = promtsImg_list[beat_array_num].gameObject;
+            var note_image = inst_note.GetComponent<Image>();
+
+            note_image.sprite = currentSkin.GetDirectionSprite(_input);
+            note_image.color = currentSkin.color;
+
+            inst_note.transform.position = Runner.rectTransform.position;
+            inst_note.gameObject.SetActive(true);
+        }
+
+    }
+
+    void DetectPlayerInput()
+    {
+        if (!isPlayerTurn)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            CheckPlayerInput(input.Left);
+        }
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            CheckPlayerInput(input.Right);
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            CheckPlayerInput(input.Top);
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            CheckPlayerInput(input.Bottom);
+        }
+    }
+
+    void CheckPlayerInput(input _input)
+    {
+        var timeOnInput = lineProg;
+        print("input for note :" +cur_note);
+        
+        beat_array_num++;
+        PlaceNote(_input);
+
+        if (cur_note == null)
+        {
+            TimingDisplay(Timing.miss);
+            return;
+        }
+
+        var runo_distance = timeOnInput - cur_note.onBeat;
+
+        if (_input == cur_note.input )
+        {
+
+            if ((Mathf.Abs(runo_distance) < inputWindow_good))
+            {
+                TimingDisplay(Timing.great);
+            }
+            else if (runo_distance < -inputWindow_good)
+            {
+                TimingDisplay(Timing.early);
+            }
+            else if (runo_distance > inputWindow_good)
+            {
+                TimingDisplay(Timing.late);
+            }
+        }
+        else
+        {
+            TimingDisplay(Timing.miss);
+        }
+    }
+
+    enum Timing { miss, early, great, late }
+
+    void TimingDisplay(Timing time)
+    {
+        switch (time)
+        {
+            case Timing.miss:
+                break;
+
+            case Timing.early:
+                break;
+            case Timing.great:
+                break;
+            case Timing.late:
+                break;
         }
     }
 
@@ -129,15 +251,20 @@ public class ChartPlayer : MonoBehaviour
         beatCount = 0;
         barCount = 1;
 
-        foreach(var p in promtsImg_list)
+        beat_array_num = 0;
+        cur_note = null;
+
+        if (currentChart.phrases[phrase_num].clearNode)
         {
-            p.gameObject.SetActive(false);
+            foreach (var p in promtsImg_list)
+            {
+                p.gameObject.SetActive(false);
+            }
         }
 
-        if (phrase_num++ > currentChart.phrases.Length)
+        if (phrase_num++ >= currentChart.phrases.Length-1)
         {
-            phrase_num = currentChart.phrases.Length;
-            return;
+            SceneManager.LoadScene("EndScene");
         }
     }
 }

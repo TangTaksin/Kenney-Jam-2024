@@ -16,18 +16,39 @@ MonoBehaviour:
   bpm: 301.2
   phrases:
   - name: Blank
-    endAfterBeat: 15
+    endAfterBeat: 7
     playerTurn: 0
+    clearNode: 0
     Notes: []
-  - name: 1
-    endAfterBeat: 15
+  - name: 1-1
+    endAfterBeat: 7
     playerTurn: 0
+    clearNode: 0
     Notes:
     - onBeat: 4
       input: 0
-    - onBeat: 8
+  - name: 1-2
+    endAfterBeat: 7
+    playerTurn: 1
+    clearNode: 1
+    Notes:
+    - onBeat: 4
       input: 0
-    - onBeat: 12
+  - name: 2-1
+    endAfterBeat: 7
+    playerTurn: 0
+    clearNode: 0
+    Notes:
+    - onBeat: 4
       input: 0
-    - onBeat: 13
+    - onBeat: 5
+      input: 1
+  - name: 2-2
+    endAfterBeat: 7
+    playerTurn: 1
+    clearNode: 1
+    Notes:
+    - onBeat: 4
       input: 0
+    - onBeat: 5
+      input: 1
