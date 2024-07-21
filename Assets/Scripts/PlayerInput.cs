@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerInput : MonoBehaviour
@@ -7,6 +8,7 @@ public class PlayerInput : MonoBehaviour
     private Animator animator; // Added Animator reference
     private Coroutine currentCoroutine;
     private bool isMoving = false;
+    private bool isJuiceEffectPlaying = false; // Track if JuiceEffect is already playing
 
     public Sprite danceLeftSprite;
     public Sprite danceRightSprite;
@@ -23,6 +25,14 @@ public class PlayerInput : MonoBehaviour
 
     private Vector3 originalScale;
     private Vector3 originalPosition;
+
+    private Dictionary<KeyCode, bool> keyStates = new Dictionary<KeyCode, bool>
+    {
+        { KeyCode.LeftArrow, false },
+        { KeyCode.RightArrow, false },
+        { KeyCode.UpArrow, false },
+        { KeyCode.DownArrow, false }
+    };
 
     void Start()
     {
@@ -43,37 +53,59 @@ public class PlayerInput : MonoBehaviour
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            spriteRenderer.sprite = danceLeftSprite;
+            HandleKeyPress(KeyCode.LeftArrow, danceLeftSprite);
             isKeyPressed = true;
         }
-        else if (Input.GetKey(KeyCode.RightArrow))
+        else
         {
-            spriteRenderer.sprite = danceRightSprite;
+            HandleKeyRelease(KeyCode.LeftArrow);
+        }
+
+        if (Input.GetKey(KeyCode.RightArrow))
+        {
+            HandleKeyPress(KeyCode.RightArrow, danceRightSprite);
             isKeyPressed = true;
         }
-        else if (Input.GetKey(KeyCode.UpArrow))
+        else
         {
-            spriteRenderer.sprite = danceUpSprite;
+            HandleKeyRelease(KeyCode.RightArrow);
+        }
+
+        if (Input.GetKey(KeyCode.UpArrow))
+        {
+            HandleKeyPress(KeyCode.UpArrow, danceUpSprite);
             isKeyPressed = true;
         }
-        else if (Input.GetKey(KeyCode.DownArrow))
+        else
         {
-            spriteRenderer.sprite = danceDownSprite;
+            HandleKeyRelease(KeyCode.UpArrow);
+        }
+
+        if (Input.GetKey(KeyCode.DownArrow))
+        {
+            HandleKeyPress(KeyCode.DownArrow, danceDownSprite);
             isKeyPressed = true;
+        }
+        else
+        {
+            HandleKeyRelease(KeyCode.DownArrow);
         }
 
         if (isKeyPressed)
         {
             isMoving = true;
-            if (currentCoroutine != null)
+            if (!isJuiceEffectPlaying)
             {
-                StopCoroutine(currentCoroutine);
+                if (currentCoroutine != null)
+                {
+                    StopCoroutine(currentCoroutine);
+                }
+                if (animator != null)
+                {
+                    animator.enabled = false; // Disable animator
+                }
+                currentCoroutine = StartCoroutine(JuiceEffect(false)); // Movement effect
             }
-            if (animator != null)
-            {
-                animator.enabled = false; // Disable animator
-            }
-            currentCoroutine = StartCoroutine(JuiceEffect(false)); // Movement effect
         }
         else if (isMoving)
         {
@@ -91,6 +123,24 @@ public class PlayerInput : MonoBehaviour
         }
     }
 
+    void HandleKeyPress(KeyCode key, Sprite sprite)
+    {
+        if (!keyStates[key])
+        {
+            spriteRenderer.sprite = sprite;
+            AudioManager.Instance.PlayDancestepSFX();
+            keyStates[key] = true;
+        }
+    }
+
+    void HandleKeyRelease(KeyCode key)
+    {
+        if (keyStates[key])
+        {
+            keyStates[key] = false;
+        }
+    }
+
     IEnumerator SetIdleAfterDelay()
     {
         yield return new WaitForSeconds(idleDelay); // Wait before switching to idle sprite
@@ -105,6 +155,7 @@ public class PlayerInput : MonoBehaviour
 
     IEnumerator JuiceEffect(bool isIdle)
     {
+        isJuiceEffectPlaying = true; // Indicate that JuiceEffect is playing
         float elapsedTime = 0f;
 
         float scaleDurationActual = isIdle ? scaleDuration : 0;
@@ -135,5 +186,7 @@ public class PlayerInput : MonoBehaviour
             transform.localScale = originalScale;
             transform.position = originalPosition;
         }
+
+        isJuiceEffectPlaying = false; // Indicate that JuiceEffect has finished
     }
 }
